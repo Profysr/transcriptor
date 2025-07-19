@@ -1,0 +1,415 @@
+{
+  "name": "Shorts Creator 14-07-2025",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "69e21675-e11d-4efd-80e9-97de51b0a29a",
+      "name": "When clicking ‘Test workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "C:/Users/bilal/Downloads/*_segments.json",
+        "options": {
+          "fileExtension": ".json"
+        }
+      },
+      "id": "b8d5e7da-bf5b-490a-9b75-7ef39aedcf81",
+      "name": "Read/Write Files from Disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        32,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d2f4e24c-acb2-4d2c-937a-795202a123cf",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        240,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "destinationKey": "jsonRes",
+        "options": {}
+      },
+      "id": "ce5c404a-7073-4622-9fcb-fc0febd5401c",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        512,
+        288
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c50260aa-e8c2-49fa-bf3c-f8f9d6645bd1",
+      "name": "Replace Me",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "binaryPropertyName": "=geminiRes",
+        "options": {}
+      },
+      "id": "caec7bc6-5393-4c9e-ad8e-cba52447fceb",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1376,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "29c5d4d9-bfae-4d35-aa7c-f203f95d8b8f",
+      "name": "Gemini Flash",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        736,
+        480
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "rLz1rpPxTCy2MR50",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the transcription of the video:\n{{ $json.jsonRes.segments.toJsonString() }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are Viralyze — a transcription intelligence agent specializing in content analysis of multilingual spoken video formats. You will receive segmented audio transcripts as input. Each segment will contain its start, end, Text,\n\n## Your Tasks:\n\n1- Video Type Classification\n-   Determine the most appropriate content type based on the overall tone, vocabulary, pacing, and topic cues present in the transcript.\n\n2- Detect Viral Segment\n-   Identify any segment or group of consecutive segments from the transcript that possess high engagement potential.\n-   Characteristics of viral content include:\n    * Strong hooks: Phrases designed to immediately grab attention (e.g., “You won’t believe…”, “Here’s the truth…”).\n    * Emotional high points: Moments of impactful revelation, surprising plot twists, or strong emotional expression.\n    * Humor, controversy, or potent motivational messages.\n    * Tension-driven storytelling or suspenseful moments.\n    * If the video type is a podcast then question and their answers .\n-   For qualifying consecutive segments, you must merge them. Return their updated start, end, and the `text`.\n-   If no segments qualify as viral, return [].\n\n3- Language Identification\n-   Detects and lists all distinct languages present in the transcript (e.g., \"English\", \"Urdu\", \"Spanish\"), else return [].\n\n4- Shorts Suggestions\n\n-   From the input segments, suggest how many individual high value, viral \"shorts\" can be created.\n-   Important: Each suggested short's duration must be greater than 20 seconds and less than or equal to 60 seconds.\n-   You should suggest combining original consecutive segments if doing so creates a stronger narrative or impact for the short, but make sure the combined length adheres to the time requirement.\n-   For each suggested short, provide:\n\n    * The segment_ids (referring to the numerical index/ID of the original input segments) that constitute this short.\n    * The start time of the short.\n    * The end time of the short.\n    * A one-line reason (a concise explanation of its appeal, e.g., \"hook\", \"payoff\", \"punchline\", \"emotional climax\", \"key insight\").\n-   If no suitable shorts can be created from the viral segments (e.g., they don't meet the length criteria even after combining or splitting is not feasible), explicitly indicate that no shorts suggestions are available.",
+          "maxIterations": 2,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": false
+        }
+      },
+      "id": "77c18568-ec5f-414f-b2b2-2a64a9848d8f",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        736,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"languages\": [\"string\"],\n  \"video_type\": [\"string\"],\n  \"video_classification_reason\": \"string\",\n  \"viral_segments\": [\n    {\n      \"start\": \"number\",\n      \"end\": \"number\",\n      \"text\": \"string\"\n    }\n  ],\n  \"shorts_suggestions\": [\n    {\n      \"segment_ids\": [\"number\"],\n      \"start\": \"number\",\n      \"end\": \"number\",\n      \"rationale\": \"string\"\n    }\n  ]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        976,
+        480
+      ],
+      "id": "f29275eb-ca89-4087-8479-f9be15f803ab",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        976,
+        640
+      ],
+      "id": "e02ed46e-4d74-4ad9-a22a-9ed5b1c56263",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "rLz1rpPxTCy2MR50",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1f03ed22-0f10-4d7c-8b86-1b53c3b57bdc",
+              "name": "languages",
+              "value": "={{ $json.output.languages }}",
+              "type": "array"
+            },
+            {
+              "id": "5d5401cd-9e55-4ff6-9cee-6b026b7adc51",
+              "name": "video_type",
+              "value": "={{ $json.output.video_type }}",
+              "type": "array"
+            },
+            {
+              "id": "ae93421b-2235-4ac1-9436-38e4d2fa8583",
+              "name": "rational",
+              "value": "={{ $json.output.video_classification_reason }}",
+              "type": "string"
+            },
+            {
+              "id": "bec51f96-2367-4374-b1a0-f385334ad576",
+              "name": "viral_segments",
+              "value": "={{ $json.output.viral_segments }}",
+              "type": "array"
+            },
+            {
+              "id": "61a53cf1-3e8d-468c-8142-6106ce99e40c",
+              "name": "shorts_suggestions",
+              "value": "={{ $json.output.shorts_suggestions }}",
+              "type": "array"
+            },
+            {
+              "id": "2cf37587-f18a-4ed3-ae10-6e562dd4ba48",
+              "name": "transcription",
+              "value": "={{ $('Extract from File').item.json.jsonRes.segments }}",
+              "type": "array"
+            },
+            {
+              "id": "ad0fad01-b42e-4b86-8e30-c4b87a683237",
+              "name": "filename",
+              "value": "={{ $('Extract from File').item.json.jsonRes.filename }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1168,
+        288
+      ],
+      "id": "4b2c59dd-ed8e-4749-8a64-c02eb00b37ce",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "amount": 2.5,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1440,
+        608
+      ],
+      "id": "6e7c6d37-7eec-4968-aa9d-d472570ea074",
+      "name": "Wait",
+      "webhookId": "b258f914-9501-4218-8ab7-1d85babbf7c5"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=C:\\Users\\bilal\\Downloads\\Testing\\{{ $('Edit Fields').item.json.filename }}.json",
+        "dataPropertyName": "geminiRes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        288
+      ],
+      "id": "a664a562-fe2a-45ff-bf71-a1f24c4bd903",
+      "name": "Write Json File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Flash": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Write Json File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Json File": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f5cef8cc-7e75-423c-9a7c-0ab534822626",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "777b892c48f43b480d9bfcbe8d814bdf2e478eaeac1ee71d6fb2b42eae907cab"
+  },
+  "id": "mcdNZIBsNJIUFpku",
+  "tags": [
+    {
+      "createdAt": "2025-07-06T10:54:50.143Z",
+      "updatedAt": "2025-07-06T10:54:50.143Z",
+      "id": "oL1wNZ1WvNiOLCga",
+      "name": "Youtube"
+    }
+  ]
+}
